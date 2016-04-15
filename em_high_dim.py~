@@ -1,0 +1,49 @@
+import numpy as np
+import pdb
+from sklearn.utils import shuffle
+
+n_generated = 500000
+
+
+def EM(estimator, X, s_X, max_features = None, n_generated=n_generated):
+    '''
+    Compute the mass-volume curve at point t of the scoring function
+    corresponding to 'estimator'
+    Parameters:
+    estimator: fitted estimator (eg damex.predict)
+    X: testing data
+    s_X: estimator.decision_function(X) (the lower, the more abnormal)
+    lim_inf: numpy array of shape(d,) (default is None)
+        the infimum of the data support along each dimension
+        if None, computed wrt the testing data X only
+    lim_sup: numpy array of shape(d,) (default is None)
+        the supremum of the data support along each dimension
+        if None, computed wrt the testing data X only
+    max_features: sub-sampling features size (default: no subsampling)
+    '''
+    n_samples, n_features = X.shape
+
+    if max_features is not None:
+        features = shuffle(np.arange(n_features))[:max_features]
+        X = X[:, features]
+    if max_features is None:
+        max_features = n_features
+
+    lim_inf = X.min(axis=0)
+    lim_sup = X.max(axis=0)
+    volume_support = (lim_sup - lim_inf).prod()
+
+    t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
+    
+    unif = np.random.uniform(lim_inf, lim_sup, size=(n_generated, max_features))
+    s_unif = estimator.decision_function(unif)
+
+    EM_t = np.zeros(t.shape[0])
+    min_s = min(s_unif.min(), s_X.min())
+    max_s = max(s_unif.max(), s_X.max())
+    for u in np.arange(min_s, max_s, (max_s - min_s) / 100):
+        if (s_unif >= u).sum() > n_generated / 1000:
+            EM_t = np.maximum(EM_t, 1. / n_samples * (s_X >= u).sum() -
+                              t * (s_unif >= u).sum() / n_generated * volume_support)
+    pdb.set_trace()
+    return EM_t

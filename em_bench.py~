@@ -1,0 +1,54 @@
+from time import time
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.metrics import roc_curve, auc
+from sklearn.datasets import fetch_kddcup99, fetch_covtype, fetch_mldata
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils import shuffle as sh
+from em import *
+
+np.random.seed(1)
+
+
+datasets = ['smtp']#, 'http']
+
+for dat in datasets:
+    # loading and vectorization
+    print('loading data')
+    if dat in ['http', 'smtp', 'SA', 'SF']:
+        dataset = fetch_kddcup99(subset=dat, shuffle=True, percent10=True)
+        X = dataset.data
+        y = dataset.target
+
+
+    y = (y != 'normal.').astype(int)
+
+    n_samples, n_features = np.shape(X)
+    n_samples_train = n_samples // 2
+    n_samples_test = n_samples - n_samples_train
+
+    X = X.astype(float)
+    X_train = X[:n_samples_train, :]
+    X_test = X[n_samples_train:, :]
+    y_train = y[:n_samples_train]
+    y_test = y[n_samples_train:]
+
+    print('LocalOutlierFactor processing...')
+    model = LocalOutlierFactor(metric='euclidean', algorithm='brute', n_neighbors=20, n_jobs=1)
+    model.fit(X_train)
+
+    scoring = -model.decision_function(X_test)  # the lower, the more normal
+
+    axis = np.arange(0,2,0.1)
+    em_lof = EM(scoring, X_test, axis)
+    AUC = auc(axis, em_lof)
+    plt.plot(axis, em_lof, lw=1, label='EM-curve for %s (area = %0.3f)' % (dat, AUC))
+
+# plt.xlim([-0.05, 1.05])
+# plt.ylim([-0.05, 1.05])
+# plt.xlabel('False Positive Rate')
+# plt.ylabel('True Positive Rate')
+# plt.title('Receiver operating characteristic')
+# plt.legend(loc="lower right")
+plt.show()
