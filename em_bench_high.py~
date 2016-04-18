@@ -20,8 +20,12 @@ from sklearn.datasets import fetch_pendigits, fetch_pima, fetch_wilt
 from sklearn.datasets import fetch_internet_ads, fetch_adult
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils import shuffle
 
+averaging = 2
+max_features = 3
 n_generated = 500000
+
 np.random.seed(1)
 
 # TODO: find good default parameters for every datasets
@@ -42,7 +46,7 @@ np.random.seed(1)
 # new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
 #       'pima', 'wilt', 'adult']
 
-# datasets = ['http',
+# datasets = [# 'http',
 #             'smtp', 'shuttle', # 'spambase',
 #             'pendigits', 'pima', 'wilt', 'adult']
 datasets = ['wilt']
@@ -175,95 +179,70 @@ for dat in datasets:
     y_train = y[:n_samples_train]
     y_test = y[n_samples_train:]
 
-    # # training only on normal data:
-    # X_train = X_train[y_train == 0]
-    # y_train = y_train[y_train == 0]
+    # training only on normal data:
+    X_train = X_train[y_train == 0]
+    y_train = y_train[y_train == 0]
 
     # define models:
     iforest = IsolationForest()
     lof = LocalOutlierFactor(n_neighbors=20)
     ocsvm = OneClassSVM()
 
-    lim_inf = X.min(axis=0)
-    lim_sup = X.max(axis=0)
-    volume_support = (lim_sup - lim_inf).prod()
-    t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
-    axis_alpha = np.arange(0.95, 0.999, 0.001)
-    unif = np.random.uniform(lim_inf, lim_sup,
-                             size=(n_generated, n_features))
+    n_samples, n_features = X.shape
+    em_iforest, mv_iforest = 0, 0
+    em_lof, mv_lof = 0, 0
+    em_ocsvm, mv_ocsvm = 0, 0
 
-    # fit:
-    print('IsolationForest processing...')
-    iforest = IsolationForest()
-    iforest.fit(X_train)
-    s_X_iforest = iforest.decision_function(X_test)
-    print('LocalOutlierFactor processing...')
-    lof = LocalOutlierFactor(n_neighbors=20)
-    lof.fit(X_train)
-    s_X_lof = lof.decision_function(X_test)
-    print('OneClassSVM processing...')
-    ocsvm = OneClassSVM()
-    ocsvm.fit(X_train[:min(100000, n_samples_train - 1)])
-    s_X_ocsvm = ocsvm.decision_function(X_test).reshape(1, -1)[0]
+    for nb_exp in range(averaging):
+        features = shuffle(np.arange(n_features))[:max_features]
+        X_train_ = X_train[:, features]
+        X_ = X[:, features]
 
-    s_unif_iforest = iforest.decision_function(unif)
-    s_unif_lof = lof.decision_function(unif)
-    s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
+        lim_inf = X_.min(axis=0)
+        lim_sup = X_.max(axis=0)
+        volume_support = (lim_sup - lim_inf).prod()
+        t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
+        axis_alpha = np.arange(0.9, 0.99, 0.001)
+        unif = np.random.uniform(lim_inf, lim_sup,
+                                 size=(n_generated, max_features))
 
-    plt.subplot(121)
-    auc_iforest, em_iforest, amax_iforest = em(t, n_samples_test,
-                                               volume_support,
-                                               s_unif_iforest,
-                                               s_X_iforest, n_generated)
+        iforest.fit(X_train_)
+        lof.fit(X_train_)
+        ocsvm.fit(X_train_)
+        s_X_iforest = iforest.decision_function(X_)
+        s_X_lof = lof.decision_function(X_)
+        s_X_ocsvm = ocsvm.decision_function(X_).reshape(1, -1)[0]
 
-    auc_lof, em_lof, amax_lof = em(t, n_samples_test, volume_support,
-                                   s_unif_lof, s_X_lof, n_generated)
+        s_unif_iforest = iforest.decision_function(unif)
+        s_unif_lof = lof.decision_function(unif)
+        s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
 
-    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, n_samples_test, volume_support,
-                                         s_unif_ocsvm, s_X_ocsvm,
-                                         n_generated)
+        em_iforest += em(t, n_samples, volume_support, s_unif_iforest,
+                         s_X_iforest, n_generated)[0]
+        mv_iforest += mv(axis_alpha, n_samples, volume_support, s_unif_iforest,
+                         s_X_iforest, n_generated)[0]
+        em_lof += em(t, n_samples, volume_support, s_unif_lof, s_X_lof,
+                     n_generated)[0]
+        mv_lof += mv(axis_alpha, n_samples, volume_support, s_unif_lof,
+                     s_X_lof, n_generated)[0]
+        em_ocsvm += em(t, n_samples, volume_support, s_unif_ocsvm,
+                       s_X_ocsvm, n_generated)[0]
+        mv_ocsvm += mv(axis_alpha, n_samples, volume_support, s_unif_ocsvm,
+                       s_X_ocsvm, n_generated)[0]
 
-    amax = max(amax_iforest, amax_lof, amax_ocsvm)
-    plt.subplot(121)
-    plt.plot(t[:amax], em_iforest[:amax], lw=1,
-             label='%s (em_score = %0.3e)'
-             % ('iforest', auc_iforest))
-    plt.plot(t[:amax], em_lof[:amax], lw=1,
-             label='%s (em-score = %0.3e)'
-             % ('lof', auc_lof))
-    plt.plot(t[:amax], em_ocsvm[:amax], lw=1,
-             label='%s (em-score = %0.3e)'
-             % ('ocsvm', auc_ocsvm))
+    em_iforest /= nb_exp
+    mv_iforest /= nb_exp
+    em_lof /= nb_exp
+    mv_lof /= nb_exp
+    em_ocsvm /= nb_exp
+    mv_ocsvm /= nb_exp
 
-    plt.ylim([-0.05, 1.05])
-    plt.xlabel('t', fontsize=20)
-    plt.ylabel('EM(t)', fontsize=20)
-    plt.title('Excess-Mass curve for ' + dat + ' dataset', fontsize=20)
-    plt.legend(loc="lower right")
+with open('result_em_bench_high_supervised_' + str(max_features) + '_' +
+          str(averaging) + '_' + '.txt', 'a') as result:
+    result.write('em_iforest = ' + str(em_iforest) + '\n')
+    result.write('em_lof = ' + str(em_lof) + '\n')
+    result.write('em_ocsvm = ' + str(em_ocsvm) + '\n \n')
 
-    plt.subplot(122)
-    print 'mv_iforest'
-    auc_iforest, mv_iforest = mv(axis_alpha, n_samples_test, volume_support,
-                                 s_unif_iforest, s_X_iforest, n_generated)
-    auc_lof, mv_lof = mv(axis_alpha, n_samples_test, volume_support,
-                         s_unif_lof, s_X_lof, n_generated)
-    auc_ocsvm, mv_ocsvm = mv(axis_alpha, n_samples_test, volume_support,
-                             s_unif_ocsvm, s_X_ocsvm, n_generated)
-    plt.plot(axis_alpha, mv_iforest, lw=1,
-             label='%s (mv-score = %0.3e)'
-             % ('iforest', auc_iforest))
-    plt.plot(axis_alpha, mv_lof, lw=1,
-             label='%s (mv-score = %0.3e)'
-             % ('lof', auc_lof))
-    plt.plot(axis_alpha, mv_ocsvm, lw=1,
-             label='%s (mv-score = %0.3e)'
-             % ('ocsvm', auc_ocsvm))
-
-    # plt.xlim([-0.05, 1.05])
-    # plt.ylim([-0.05, 100])
-    plt.xlabel('alpha', fontsize=20)
-    plt.ylabel('MV(alpha)', fontsize=20)
-    plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
-    plt.legend(loc="upper left")
-
-    plt.savefig('t_mv_em_' + dat + '_unsupervised')
+    result.write('mv_iforest = ' + str(mv_iforest) + '\n')
+    result.write('mv_lof = ' + str(mv_lof) + '\n')
+    result.write('mv_ocsvm = ' + str(mv_ocsvm) + '\n')

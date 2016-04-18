@@ -1,139 +1,30 @@
 import numpy as np
 import pdb
-from sklearn.utils import shuffle
 from sklearn.metrics import auc
-
-n_generated = 500000
-
-
-def EM(estimator, X_train, X, s_X, max_features=None, averaging=1,
-       n_generated=n_generated):
-    '''
-    Compute the mass-volume curve at point t of the scoring function
-    corresponding to 'estimator'
-    Parameters:
-    estimator: fitted estimator (eg damex.predict)
-    X: testing data
-    s_X: estimator.decision_function(X) (the lower, the more abnormal)
-    lim_inf: numpy array of shape(d,) (default is None)
-        the infimum of the data support along each dimension
-        if None, computed wrt the testing data X only
-    lim_sup: numpy array of shape(d,) (default is None)
-        the supremum of the data support along each dimension
-        if None, computed wrt the testing data X only
-    max_features: sub-sampling features size (default: no subsampling)
-    averaging: the number of experiences on different subsamplings
-    '''
-    n_samples, n_features = X.shape
-    AUC = 0
-    X_ = np.copy(X)
-    X_train_ = np.copy(X_train)
-    for nb_exp in range(averaging):
-        if max_features is not None:
-            features = shuffle(np.arange(n_features))[:max_features]
-            X_train_ = X_train[:, features]
-            X_ = X[:, features]
-            estimator.fit(X_train_)
-            s_X = estimator.decision_function(X_)
-        if max_features is None:
-            max_features = n_features
-
-        lim_inf = X_.min(axis=0)
-        lim_sup = X_.max(axis=0)
-        volume_support = (lim_sup - lim_inf).prod()
-
-        unif = np.random.uniform(lim_inf, lim_sup,
-                                 size=(n_generated, max_features))
-        s_unif = estimator.decision_function(unif)
-
-        # OneClassSVM decision_func returns shape (n,1) instead of (n,):
-        if len(s_unif.shape) > 1:
-            s_unif = s_unif.reshape(1, -1)[0]
-            s_X = s_X.reshape(1, -1)[0]
-
-        t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
-
-        EM_t = em(t, n_samples, volume_support, s_unif, s_X, n_generated)
-
-        amax = np.argmax(EM_t <= 0.9)
-        corrected_axis = False
-        if amax == 0:
-            print('ACHTUNG: 0.9 not achieved. Trying with greater axis_t')
-            corrected_axis = True
-            t = np.arange(0, 10000 / volume_support, 1 / volume_support)
-            EM_t = em(t, n_samples, volume_support, s_unif, s_X, n_generated)
-            amax = np.argmax(EM_t <= 0.9)
-        if amax == 0:
-            print '\n failed to achieve 0.9 \n'
-            pdb.set_trace()
-        AUC += auc(t[:amax], EM_t[:amax])
-    AUC /= averaging
-    if corrected_axis is True:
-        amax *= 100
-    pdb.set_trace()
-    # return the last EM_t:
-    return amax, t, EM_t, AUC
 
 
 def em(t, n_samples, volume_support, s_unif, s_X, n_generated):
     EM_t = np.zeros(t.shape[0])
-    min_s = min(s_unif.min(), s_X.min())
-    max_s = max(s_unif.max(), s_X.max())
-    for u in np.arange(min_s, max_s, (max_s - min_s) / 100):
+    # min_s = min(s_unif.min(), s_X.min())
+    # max_s = max(s_unif.max(), s_X.max())
+    # for u in np.arange(min_s, max_s, (max_s - min_s) / 10000):
+    #     if (s_unif >= u).sum() > n_generated / 1000:
+    #         EM_t = np.maximum(EM_t, 1. / n_samples * (s_X >= u).sum() -
+    #                           t * (s_unif >= u).sum() / n_generated
+    #                           * volume_support)
+    s_X_unique = np.unique(s_X)
+    for u in s_X_unique:
         if (s_unif >= u).sum() > n_generated / 1000:
             EM_t = np.maximum(EM_t, 1. / n_samples * (s_X >= u).sum() -
                               t * (s_unif >= u).sum() / n_generated
                               * volume_support)
-    return EM_t
 
-
-def MV(estimator, X_train, X, s_X, max_features=None, averaging=1,
-       n_generated=n_generated):
-    '''
-    Compute the mass-volume curve at point t of the scoring function
-    corresponding to 'estimator'
-    Parameters:
-    estimator: fitted estimator (eg damex.predict)
-    X: testing data
-    t: float
-    lim_inf: numpy array of shape(d,) (default is None)
-        the infimum of the data support along each dimension
-        if None, computed wrt the testing data X only
-    lim_sup: numpy array of shape(d,) (default is None)
-        the supremum of the data support along each dimension
-        if None, computed wrt the testing data X only
-    '''
-    n_samples, n_features = X.shape
-    axis_alpha = np.arange(0.9, 0.99, 0.001)
-    AUC = 0
-    for nb_exp in range(averaging):
-        if max_features is not None:
-            features = shuffle(np.arange(n_features))[:max_features]
-            X_train_ = X_train[:, features]
-            X_ = X[:, features]
-            estimator.fit(X_train_)
-            s_X = estimator.decision_function(X_)
-        if max_features is None:
-            max_features = n_features
-
-        lim_inf = X_.min(axis=0)
-        lim_sup = X_.max(axis=0)
-        volume_support = (lim_sup - lim_inf).prod()
-
-        unif = np.random.uniform(lim_inf, lim_sup,
-                                 size=(n_generated, max_features))
-        s_unif = estimator.decision_function(unif)
-
-        # OneClassSVM decision_func returns shape (n,1) instead of (n,):
-        if len(s_unif.shape) > 1:
-            s_unif = s_unif.reshape(1, -1)[0]
-            s_X = s_X.reshape(1, -1)[0]
-        MV = mv(axis_alpha, n_samples, volume_support, s_unif,
-                s_X, n_generated)
-        AUC += auc(axis_alpha, MV)
-    AUC /= averaging
-    # return the last EM_t:
-    return axis_alpha, MV, AUC
+    amax = np.argmax(EM_t <= 0.95)
+    if amax == 0:
+        print '\n failed to achieve 0.9 \n'
+        pdb.set_trace()
+    AUC = auc(t[:amax], EM_t[:amax])
+    return AUC, EM_t, amax
 
 
 def mv(axis_alpha, n_samples, volume_support, s_unif, s_X, n_generated):
@@ -149,7 +40,131 @@ def mv(axis_alpha, n_samples, volume_support, s_unif, s_X, n_generated):
             u = s_X[s_X_argsort[-cpt]]
             mass = 1. / n_samples * cpt  # sum(s_X > u)
         mv[i] = float((s_unif >= u).sum()) / n_generated * volume_support
-    return mv
+    return auc(axis_alpha, mv), mv
+
+
+# def EM(estimator, X_train, X, s_X, max_features=None, averaging=1,
+#        n_generated=n_generated):
+#     '''
+#     Compute the mass-volume curve at point t of the scoring function
+#     corresponding to 'estimator'
+#     Parameters:
+#     estimator: fitted estimator (eg damex.predict)
+#     X: testing data
+#     s_X: estimator.decision_function(X) (the lower, the more abnormal)
+#     lim_inf: numpy array of shape(d,) (default is None)
+#         the infimum of the data support along each dimension
+#         if None, computed wrt the testing data X only
+#     lim_sup: numpy array of shape(d,) (default is None)
+#         the supremum of the data support along each dimension
+#         if None, computed wrt the testing data X only
+#     max_features: sub-sampling features size (default: no subsampling)
+#     averaging: the number of experiences on different subsamplings
+#     '''
+#     n_samples, n_features = X.shape
+#     AUC = 0
+#     X_ = np.copy(X)
+#     X_train_ = np.copy(X_train)
+#     for nb_exp in range(averaging):
+#         if max_features is not None:
+#             features = shuffle(np.arange(n_features))[:max_features]
+#             X_train_ = X_train[:, features]
+#             X_ = X[:, features]
+#             estimator.fit(X_train_)
+#             s_X = estimator.decision_function(X_)
+#         if max_features is None:
+#             max_features = n_features
+
+#         lim_inf = X_.min(axis=0)
+#         lim_sup = X_.max(axis=0)
+#         volume_support = (lim_sup - lim_inf).prod()
+
+#         unif = np.random.uniform(lim_inf, lim_sup,
+#                                  size=(n_generated, max_features))
+#         s_unif = estimator.decision_function(unif)
+
+#         # OneClassSVM decision_func returns shape (n,1) instead of (n,):
+#         if len(s_unif.shape) > 1:
+#             s_unif = s_unif.reshape(1, -1)[0]
+#             s_X = s_X.reshape(1, -1)[0]
+
+#         t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
+
+#         EM_t = em(t, n_samples, volume_support, s_unif, s_X, n_generated)
+
+#         amax = np.argmax(EM_t <= 0.9)
+#         corrected_axis = False
+#         if amax == 0:
+#             print('ACHTUNG: 0.9 not achieved. Trying with greater axis_t')
+#             corrected_axis = True
+#             t = np.arange(0, 10000 / volume_support, 1 / volume_support)
+#             EM_t = em(t, n_samples, volume_support, s_unif, s_X, n_generated)
+#             amax = np.argmax(EM_t <= 0.9)
+#         if amax == 0:
+#             print '\n failed to achieve 0.9 \n'
+#             pdb.set_trace()
+#         AUC += auc(t[:amax], EM_t[:amax])
+#     AUC /= averaging
+#     if corrected_axis is True:
+#         amax *= 100
+#     pdb.set_trace()
+#     # return the last EM_t:
+#     return amax, t, EM_t, AUC
+
+
+
+
+# def MV(estimator, X_train, X, s_X, max_features=None, averaging=1,
+#        n_generated=n_generated):
+#     '''
+#     Compute the mass-volume curve at point t of the scoring function
+#     corresponding to 'estimator'
+#     Parameters:
+#     estimator: fitted estimator (eg damex.predict)
+#     X: testing data
+#     t: float
+#     lim_inf: numpy array of shape(d,) (default is None)
+#         the infimum of the data support along each dimension
+#         if None, computed wrt the testing data X only
+#     lim_sup: numpy array of shape(d,) (default is None)
+#         the supremum of the data support along each dimension
+#         if None, computed wrt the testing data X only
+#     '''
+#     n_samples, n_features = X.shape
+#     axis_alpha = np.arange(0.9, 0.99, 0.001)
+#     AUC = 0
+#     for nb_exp in range(averaging):
+#         if max_features is not None:
+#             features = shuffle(np.arange(n_features))[:max_features]
+#             X_train_ = X_train[:, features]
+#             X_ = X[:, features]
+#             estimator.fit(X_train_)
+#             s_X = estimator.decision_function(X_)
+#         if max_features is None:
+#             max_features = n_features
+
+#         lim_inf = X_.min(axis=0)
+#         lim_sup = X_.max(axis=0)
+#         volume_support = (lim_sup - lim_inf).prod()
+
+#         unif = np.random.uniform(lim_inf, lim_sup,
+#                                  size=(n_generated, max_features))
+#         s_unif = estimator.decision_function(unif)
+
+#         # OneClassSVM decision_func returns shape (n,1) instead of (n,):
+#         if len(s_unif.shape) > 1:
+#             s_unif = s_unif.reshape(1, -1)[0]
+#             s_X = s_X.reshape(1, -1)[0]
+#         MV = mv(axis_alpha, n_samples, volume_support, s_unif,
+#                 s_X, n_generated)
+#         AUC += auc(axis_alpha, MV)
+#     AUC /= averaging
+#     # return the last EM_t:
+#     return axis_alpha, MV, AUC
+
+
+
+
 
 
 
