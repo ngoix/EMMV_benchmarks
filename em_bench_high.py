@@ -22,8 +22,8 @@ from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import shuffle
 
-averaging = 2
-max_features = 3
+averaging = 20
+max_features = 5
 n_generated = 500000
 
 np.random.seed(1)
@@ -39,7 +39,7 @@ np.random.seed(1)
 #             'pendigits', 'pima', 'wilt',  # 'internet_ads',
 #             'adult']
 
-# # continuous datasets:
+# continuous datasets:
 # datasets = ['http', 'smtp', 'shuttle', 'forestcover',
 #             'ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
 #             'pendigits', 'pima', 'wilt', 'adult']
@@ -49,7 +49,7 @@ np.random.seed(1)
 # datasets = [# 'http',
 #             'smtp', 'shuttle', # 'spambase',
 #             'pendigits', 'pima', 'wilt', 'adult']
-datasets = ['wilt']
+datasets = ['forestcover', 'ionosphere', 'spambase', 'annthyroid', 'arrhythmia']
 
 for dat in datasets:
     plt.clf()
@@ -179,9 +179,9 @@ for dat in datasets:
     y_train = y[:n_samples_train]
     y_test = y[n_samples_train:]
 
-    # training only on normal data:
-    X_train = X_train[y_train == 0]
-    y_train = y_train[y_train == 0]
+    # # training only on normal data:
+    # X_train = X_train[y_train == 0]
+    # y_train = y_train[y_train == 0]
 
     # define models:
     iforest = IsolationForest()
@@ -209,6 +209,7 @@ for dat in datasets:
         iforest.fit(X_train_)
         lof.fit(X_train_)
         ocsvm.fit(X_train_[:min(100000, n_samples_train - 1)])
+        print 'end of ocsvm training!'
         s_X_iforest = iforest.decision_function(X_)
         s_X_lof = lof.decision_function(X_)
         s_X_ocsvm = ocsvm.decision_function(X_).reshape(1, -1)[0]
@@ -237,7 +238,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('result_em_bench_high_supervised_' + dat + '_'
+    with open('results_workshop/result_em_bench_high_unsupervised_with095_' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
