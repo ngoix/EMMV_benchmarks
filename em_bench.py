@@ -42,10 +42,10 @@ np.random.seed(1)
 # new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
 #       'pima', 'wilt', 'adult']
 
-# datasets = ['http',
-#             'smtp', 'shuttle', # 'spambase',
-#             'pendigits', 'pima', 'wilt', 'adult']
-datasets = ['wilt']
+datasets = ['http',
+            'smtp', 'shuttle', # 'spambase',
+            'pendigits', 'pima', 'wilt', 'adult']
+#datasets = ['wilt']
 
 for dat in datasets:
     plt.clf()
