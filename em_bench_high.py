@@ -52,8 +52,6 @@ np.random.seed(1)
 datasets = ['forestcover', 'ionosphere', 'spambase', 'annthyroid', 'arrhythmia']
 
 for dat in datasets:
-    plt.clf()
-    plt.figure(figsize=(25, 13))
 
     print 'dataset:', dat
     # loading and vectorization
@@ -169,11 +167,26 @@ for dat in datasets:
     if dat == 'http' or dat == 'smtp':
         y = (y != 'normal.').astype(int)
 
+    # ### 10 % of abnormal max: ###
+    index_normal = (y == 0)
+    index_abnormal = (y == 1)
+    if index_abnormal.sum() > 0.1 * index_normal.sum():
+        X_normal = X[index_normal]
+        X_abnormal = X[index_abnormal]
+        n_anomalies = X_abnormal.shape[0]
+        n_anomalies_max = int(0.1 * index_normal.sum())
+        r = sh(np.arange(n_anomalies))[:n_anomalies_max]
+        X = np.r_[X_normal, X_abnormal[r]]
+        y = np.array([0] * X_normal.shape[0] + [1] * n_anomalies_max)
+    # ######
+
     n_samples, n_features = np.shape(X)
     n_samples_train = n_samples // 2
     n_samples_test = n_samples - n_samples_train
 
     X = X.astype(float)
+    X = scale(X)
+    
     X_train = X[:n_samples_train, :]
     X_test = X[n_samples_train:, :]
     y_train = y[:n_samples_train]
@@ -238,7 +251,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_unsupervised_with095_' + dat + '_'
+    with open('results_workshop/result_em_bench_high_unsupervised_with095_withano10percent_with_scale' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
