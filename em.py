@@ -13,6 +13,7 @@ def em(t, n_samples, volume_support, s_unif, s_X, n_generated):
     #                           t * (s_unif >= u).sum() / n_generated
     #                           * volume_support)
     s_X_unique = np.unique(s_X)
+    EM_t[0] = 1.
     for u in s_X_unique:
         if (s_unif >= u).sum() > n_generated / 1000:
             EM_t = np.maximum(EM_t, 1. / n_samples * (s_X >= u).sum() -
@@ -20,7 +21,7 @@ def em(t, n_samples, volume_support, s_unif, s_X, n_generated):
                               * volume_support)
 
     amax = np.argmax(EM_t <= 0.99) + 1
-    if amax == 0:
+    if amax == 1:
         print '\n failed to achieve 0.99 \n'
         pdb.set_trace()
     AUC = auc(t[:amax], EM_t[:amax])
