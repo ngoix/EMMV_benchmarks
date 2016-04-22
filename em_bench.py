@@ -188,7 +188,7 @@ for dat in datasets:
     lim_sup = X.max(axis=0)
     volume_support = (lim_sup - lim_inf).prod()
     t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
-    axis_alpha = np.arange(0.95, 0.999, 0.001)
+    axis_alpha = np.arange(0.99, 0.999, 0.001)
     unif = np.random.uniform(lim_inf, lim_sup,
                              size=(n_generated, n_features))
 

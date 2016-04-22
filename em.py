@@ -19,9 +19,9 @@ def em(t, n_samples, volume_support, s_unif, s_X, n_generated):
                               t * (s_unif >= u).sum() / n_generated
                               * volume_support)
 
-    amax = np.argmax(EM_t <= 0.95)
+    amax = np.argmax(EM_t <= 0.99) + 1
     if amax == 0:
-        print '\n failed to achieve 0.9 \n'
+        print '\n failed to achieve 0.99 \n'
         pdb.set_trace()
     AUC = auc(t[:amax], EM_t[:amax])
     return AUC, EM_t, amax
