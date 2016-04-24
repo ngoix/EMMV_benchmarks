@@ -20,7 +20,7 @@ def em(t, volume_support, s_unif, s_X, n_generated):
             EM_t = np.maximum(EM_t, 1. / n_samples * (s_X > u).sum() -
                               t * (s_unif > u).sum() / n_generated
                               * volume_support)
-    amax = np.argmax(EM_t <= 0.7) + 1
+    amax = np.argmax(EM_t <= 0.9) + 1
     if amax == 1:
         print '\n failed to achieve 0.99 \n'
         # pdb.set_trace()

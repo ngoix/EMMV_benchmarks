@@ -23,7 +23,7 @@ from sklearn.preprocessing import LabelBinarizer, scale
 from sklearn.utils import shuffle
 
 averaging = 20
-max_features = 5
+max_features = 3
 n_generated = 500000
 
 np.random.seed(1)
@@ -223,7 +223,7 @@ for dat in datasets:
 
         iforest.fit(X_train_)
         lof.fit(X_train_)
-        ocsvm.fit(X_train_[:min(100000, n_samples_train - 1)])
+        ocsvm.fit(X_train_[:min(10000, n_samples_train - 1)])
         print 'end of ocsvm training!'
         s_X_iforest = iforest.decision_function(X_)
         s_X_lof = lof.decision_function(X_)
@@ -233,17 +233,17 @@ for dat in datasets:
         s_unif_lof = lof.decision_function(unif)
         s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
 
-        em_iforest += em(t, n_samples_test, volume_support, s_unif_iforest,
+        em_iforest += em(t, volume_support, s_unif_iforest,
                          s_X_iforest, n_generated)[0]
-        mv_iforest += mv(axis_alpha, n_samples_test, volume_support, s_unif_iforest,
+        mv_iforest += mv(axis_alpha, volume_support, s_unif_iforest,
                          s_X_iforest, n_generated)[0]
-        em_lof += em(t, n_samples_test, volume_support, s_unif_lof, s_X_lof,
+        em_lof += em(t, volume_support, s_unif_lof, s_X_lof,
                      n_generated)[0]
-        mv_lof += mv(axis_alpha, n_samples_test, volume_support, s_unif_lof,
+        mv_lof += mv(axis_alpha, volume_support, s_unif_lof,
                      s_X_lof, n_generated)[0]
-        em_ocsvm += em(t, n_samples_test, volume_support, s_unif_ocsvm,
+        em_ocsvm += em(t, volume_support, s_unif_ocsvm,
                        s_X_ocsvm, n_generated)[0]
-        mv_ocsvm += mv(axis_alpha, n_samples_test, volume_support, s_unif_ocsvm,
+        mv_ocsvm += mv(axis_alpha, volume_support, s_unif_ocsvm,
                        s_X_ocsvm, n_generated)[0]
 
     em_iforest /= averaging
@@ -253,7 +253,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting' + dat + '_'
+    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting_with10000ocsvm' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
