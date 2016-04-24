@@ -21,7 +21,7 @@ from sklearn.datasets import fetch_internet_ads, fetch_adult
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 from sklearn.preprocessing import LabelBinarizer
 
-n_generated = 500000
+n_generated = 800000
 np.random.seed(1)
 
 # TODO: find good default parameters for every datasets
@@ -175,9 +175,11 @@ for dat in datasets:
     y_train = y[:n_samples_train]
     y_test = y[n_samples_train:]
 
-    # # training only on normal data:
-    # X_train = X_train[y_train == 0]
-    # y_train = y_train[y_train == 0]
+    # training and testing only on normal data:
+    X_train = X_train[y_train == 0]
+    y_train = y_train[y_train == 0]
+    X_test = X_test[y_test == 0]
+    y_test = y_test[y_test == 0]
 
     # define models:
     iforest = IsolationForest()
@@ -187,8 +189,8 @@ for dat in datasets:
     lim_inf = X.min(axis=0)
     lim_sup = X.max(axis=0)
     volume_support = (lim_sup - lim_inf).prod()
-    t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
-    axis_alpha = np.arange(0.99, 0.999, 0.001)
+    t = np.arange(0, 1000000 / volume_support, 1 / volume_support)
+    axis_alpha = np.arange(0.7, 0.99999, 0.01)
     unif = np.random.uniform(lim_inf, lim_sup,
                              size=(n_generated, n_features))
 
@@ -211,15 +213,15 @@ for dat in datasets:
     s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
 
     plt.subplot(121)
-    auc_iforest, em_iforest, amax_iforest = em(t, n_samples_test,
+    auc_iforest, em_iforest, amax_iforest = em(t,
                                                volume_support,
                                                s_unif_iforest,
                                                s_X_iforest, n_generated)
 
-    auc_lof, em_lof, amax_lof = em(t, n_samples_test, volume_support,
+    auc_lof, em_lof, amax_lof = em(t, volume_support,
                                    s_unif_lof, s_X_lof, n_generated)
 
-    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, n_samples_test, volume_support,
+    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, volume_support,
                                          s_unif_ocsvm, s_X_ocsvm,
                                          n_generated)
 
@@ -243,11 +245,11 @@ for dat in datasets:
 
     plt.subplot(122)
     print 'mv_iforest'
-    auc_iforest, mv_iforest = mv(axis_alpha, n_samples_test, volume_support,
+    auc_iforest, mv_iforest = mv(axis_alpha, volume_support,
                                  s_unif_iforest, s_X_iforest, n_generated)
-    auc_lof, mv_lof = mv(axis_alpha, n_samples_test, volume_support,
+    auc_lof, mv_lof = mv(axis_alpha, volume_support,
                          s_unif_lof, s_X_lof, n_generated)
-    auc_ocsvm, mv_ocsvm = mv(axis_alpha, n_samples_test, volume_support,
+    auc_ocsvm, mv_ocsvm = mv(axis_alpha, volume_support,
                              s_unif_ocsvm, s_X_ocsvm, n_generated)
     plt.plot(axis_alpha, mv_iforest, lw=1,
              label='%s (mv-score = %0.3e)'
@@ -266,4 +268,5 @@ for dat in datasets:
     plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
     plt.legend(loc="upper left")
 
-    plt.savefig('t_mv_em_' + dat + '_unsupervised')
+    plt.savefig('t_mv_em_' + dat + '_unsupervised' + '07')
+    # plt.show()
