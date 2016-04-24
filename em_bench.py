@@ -221,10 +221,10 @@ for dat in datasets:
                                                s_unif_iforest,
                                                s_X_iforest, n_generated)
 
-    auc_lof, em_lof, amax_lof = em(t, volume_support,
+    auc_lof, em_lof, amax_lof = em(t, t_max, volume_support,
                                    s_unif_lof, s_X_lof, n_generated)
 
-    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, volume_support,
+    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, t_max, volume_support,
                                          s_unif_ocsvm, s_X_ocsvm,
                                          n_generated)
 
