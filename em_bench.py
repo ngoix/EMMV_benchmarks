@@ -19,9 +19,11 @@ from sklearn.datasets import fetch_spambase, fetch_annthyroid, fetch_arrhythmia
 from sklearn.datasets import fetch_pendigits, fetch_pima, fetch_wilt
 from sklearn.datasets import fetch_internet_ads, fetch_adult
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelBinarizer, scale
 
-n_generated = 800000
+n_generated = 50000
+alpha_max = 0.8
+t_max = 0.8
 np.random.seed(1)
 
 # TODO: find good default parameters for every datasets
@@ -42,10 +44,10 @@ np.random.seed(1)
 # new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
 #       'pima', 'wilt', 'adult']
 
-datasets = ['http',
-            'smtp', 'shuttle', # 'spambase',
-            'pendigits', 'pima', 'wilt', 'adult']
-#datasets = ['wilt']
+# datasets = ['http',
+#             'smtp', 'shuttle', # 'spambase',
+#             'pendigits', 'pima', 'wilt', 'adult']
+datasets = ['shuttle']
 
 for dat in datasets:
     plt.clf()
@@ -170,6 +172,7 @@ for dat in datasets:
     n_samples_test = n_samples - n_samples_train
 
     X = X.astype(float)
+    X = scale(X)
     X_train = X[:n_samples_train, :]
     X_test = X[n_samples_train:, :]
     y_train = y[:n_samples_train]
@@ -190,7 +193,7 @@ for dat in datasets:
     lim_sup = X.max(axis=0)
     volume_support = (lim_sup - lim_inf).prod()
     t = np.arange(0, 1000000 / volume_support, 1 / volume_support)
-    axis_alpha = np.arange(0.7, 0.99999, 0.01)
+    axis_alpha = np.arange(alpha_max, 0.99999, 0.01)
     unif = np.random.uniform(lim_inf, lim_sup,
                              size=(n_generated, n_features))
 
@@ -213,7 +216,7 @@ for dat in datasets:
     s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
 
     plt.subplot(121)
-    auc_iforest, em_iforest, amax_iforest = em(t,
+    auc_iforest, em_iforest, amax_iforest = em(t, t_max,
                                                volume_support,
                                                s_unif_iforest,
                                                s_X_iforest, n_generated)
@@ -268,5 +271,5 @@ for dat in datasets:
     plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
     plt.legend(loc="upper left")
 
-    plt.savefig('t_mv_em_' + dat + '_unsupervised' + '07')
+    plt.savefig('t_mv_em_' + dat + '_unsupervised' + '08' + 'with_scale')
     # plt.show()
