@@ -19,7 +19,7 @@ from sklearn.datasets import fetch_spambase, fetch_annthyroid, fetch_arrhythmia
 from sklearn.datasets import fetch_pendigits, fetch_pima, fetch_wilt
 from sklearn.datasets import fetch_internet_ads, fetch_adult
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelBinarizer, scale
 from sklearn.utils import shuffle
 
 averaging = 20
@@ -192,9 +192,11 @@ for dat in datasets:
     y_train = y[:n_samples_train]
     y_test = y[n_samples_train:]
 
-    # # training only on normal data:
-    # X_train = X_train[y_train == 0]
-    # y_train = y_train[y_train == 0]
+    # training and testing only on normal data:
+    X_train = X_train[y_train == 0]
+    y_train = y_train[y_train == 0]
+    X_test = X_test[y_test == 0]
+    y_test = y_test[y_test == 0]
 
     # define models:
     iforest = IsolationForest()
@@ -214,7 +216,7 @@ for dat in datasets:
         lim_inf = X_.min(axis=0)
         lim_sup = X_.max(axis=0)
         volume_support = (lim_sup - lim_inf).prod()
-        t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
+        t = np.arange(0, 100 / volume_support, 0.001 / volume_support)
         axis_alpha = np.arange(0.9, 0.99, 0.001)
         unif = np.random.uniform(lim_inf, lim_sup,
                                  size=(n_generated, max_features))
@@ -251,7 +253,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_unsupervised_with095_withano10percent_with_scale' + dat + '_'
+    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
