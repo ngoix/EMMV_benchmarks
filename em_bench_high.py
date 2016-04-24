@@ -27,6 +27,7 @@ max_features = 3
 n_generated = 500000
 alpha_max = 0.9
 t_max = 0.9
+ocsvm_max_train = 10000
 
 np.random.seed(1)
 
@@ -225,7 +226,7 @@ for dat in datasets:
 
         iforest.fit(X_train_)
         lof.fit(X_train_)
-        ocsvm.fit(X_train_[:min(10000, n_samples_train - 1)])
+        ocsvm.fit(X_train_[:min(ocsvm_max_train, n_samples_train - 1)])
         print 'end of ocsvm training!'
         s_X_iforest = iforest.decision_function(X_)
         s_X_lof = lof.decision_function(X_)

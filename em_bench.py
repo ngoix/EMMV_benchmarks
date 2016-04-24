@@ -24,6 +24,8 @@ from sklearn.preprocessing import LabelBinarizer, scale
 n_generated = 50000
 alpha_max = 0.8
 t_max = 0.8
+ocsvm_max_train = 10000
+
 np.random.seed(1)
 
 # TODO: find good default parameters for every datasets
@@ -208,7 +210,7 @@ for dat in datasets:
     s_X_lof = lof.decision_function(X_test)
     print('OneClassSVM processing...')
     ocsvm = OneClassSVM()
-    ocsvm.fit(X_train[:min(100000, n_samples_train - 1)])
+    ocsvm.fit(X_train[:min(ocsvm_max_train, n_samples_train - 1)])
     s_X_ocsvm = ocsvm.decision_function(X_test).reshape(1, -1)[0]
 
     s_unif_iforest = iforest.decision_function(unif)
