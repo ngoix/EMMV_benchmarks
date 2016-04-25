@@ -49,7 +49,7 @@ np.random.seed(1)
 # datasets = [# 'http',
 #             'smtp', 'shuttle', # 'spambase',
 #             'pendigits', 'pima', 'wilt', 'adult']
-datasets = ['forestcover', 'ionosphere', 'spambase', 'annthyroid', 'arrhythmia']
+datasets = ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'forestcover']
 
 for dat in datasets:
 
@@ -223,7 +223,7 @@ for dat in datasets:
 
         iforest.fit(X_train_)
         lof.fit(X_train_)
-        ocsvm.fit(X_train_[:min(10000, n_samples_train - 1)])
+        ocsvm.fit(X_train_[:min(50000, n_samples_train - 1)])
         print 'end of ocsvm training!'
         s_X_iforest = iforest.decision_function(X_)
         s_X_lof = lof.decision_function(X_)
@@ -253,7 +253,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting_with10000ocsvm' + dat + '_'
+    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting_with50000ocsvm' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
