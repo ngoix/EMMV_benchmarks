@@ -7,7 +7,7 @@ sys.path.insert(1, '/home/nicolas/Bureau/OCRF')
 
 
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 from sklearn.neighbors import LocalOutlierFactor
@@ -19,9 +19,14 @@ from sklearn.datasets import fetch_spambase, fetch_annthyroid, fetch_arrhythmia
 from sklearn.datasets import fetch_pendigits, fetch_pima, fetch_wilt
 from sklearn.datasets import fetch_internet_ads, fetch_adult
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelBinarizer, scale
 
-n_generated = 800000
+n_generated = 100000
+alpha_min = 0.9
+alpha_max = 0.999
+t_max = 0.9
+ocsvm_max_train = 50000
+#wilt: prendre t_max = 0.995, alpha_min = 0.995, alpha_max=0.999 (sans scale)
 np.random.seed(1)
 
 # TODO: find good default parameters for every datasets
@@ -43,9 +48,9 @@ np.random.seed(1)
 #       'pima', 'wilt', 'adult']
 
 datasets = ['http',
-            'smtp', 'shuttle', # 'spambase',
+            'smtp', 'shuttle',  # 'spambase',
             'pendigits', 'pima', 'wilt', 'adult']
-#datasets = ['wilt']
+# datasets = ['adult']
 
 for dat in datasets:
     plt.clf()
@@ -165,11 +170,26 @@ for dat in datasets:
     if dat == 'http' or dat == 'smtp':
         y = (y != 'normal.').astype(int)
 
+    # ### 10 % of abnormal max: ###
+    index_normal = (y == 0)
+    index_abnormal = (y == 1)
+    if index_abnormal.sum() > 0.1 * index_normal.sum():
+        X_normal = X[index_normal]
+        X_abnormal = X[index_abnormal]
+        n_anomalies = X_abnormal.shape[0]
+        n_anomalies_max = int(0.1 * index_normal.sum())
+        r = sh(np.arange(n_anomalies))[:n_anomalies_max]
+        X = np.r_[X_normal, X_abnormal[r]]
+        y = np.array([0] * X_normal.shape[0] + [1] * n_anomalies_max)
+    # ######
+
     n_samples, n_features = np.shape(X)
     n_samples_train = n_samples // 2
     n_samples_test = n_samples - n_samples_train
 
     X = X.astype(float)
+    # if X.std() > 1:
+    X = scale(X)
     X_train = X[:n_samples_train, :]
     X_test = X[n_samples_train:, :]
     y_train = y[:n_samples_train]
@@ -189,8 +209,8 @@ for dat in datasets:
     lim_inf = X.min(axis=0)
     lim_sup = X.max(axis=0)
     volume_support = (lim_sup - lim_inf).prod()
-    t = np.arange(0, 1000000 / volume_support, 1 / volume_support)
-    axis_alpha = np.arange(0.7, 0.99999, 0.01)
+    t = np.arange(0, 100 / volume_support, 0.001 / volume_support)
+    axis_alpha = np.arange(alpha_min, alpha_max, 0.0001)
     unif = np.random.uniform(lim_inf, lim_sup,
                              size=(n_generated, n_features))
 
@@ -205,23 +225,21 @@ for dat in datasets:
     s_X_lof = lof.decision_function(X_test)
     print('OneClassSVM processing...')
     ocsvm = OneClassSVM()
-    ocsvm.fit(X_train[:min(100000, n_samples_train - 1)])
+    ocsvm.fit(X_train[:min(ocsvm_max_train, n_samples_train - 1)])
     s_X_ocsvm = ocsvm.decision_function(X_test).reshape(1, -1)[0]
-
     s_unif_iforest = iforest.decision_function(unif)
     s_unif_lof = lof.decision_function(unif)
     s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
-
     plt.subplot(121)
-    auc_iforest, em_iforest, amax_iforest = em(t,
+    auc_iforest, em_iforest, amax_iforest = em(t, t_max,
                                                volume_support,
                                                s_unif_iforest,
                                                s_X_iforest, n_generated)
 
-    auc_lof, em_lof, amax_lof = em(t, volume_support,
+    auc_lof, em_lof, amax_lof = em(t, t_max, volume_support,
                                    s_unif_lof, s_X_lof, n_generated)
 
-    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, volume_support,
+    auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, t_max, volume_support,
                                          s_unif_ocsvm, s_X_ocsvm,
                                          n_generated)
 
@@ -268,5 +286,5 @@ for dat in datasets:
     plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
     plt.legend(loc="upper left")
 
-    plt.savefig('t_mv_em_' + dat + '_unsupervised' + '07')
+    plt.savefig('t_mv_em_' + dat + '_supervised' + '_09' + '_scale' + '_10ano')
     # plt.show()

@@ -25,6 +25,9 @@ from sklearn.utils import shuffle
 averaging = 20
 max_features = 3
 n_generated = 500000
+alpha_max = 0.9
+t_max = 0.9
+ocsvm_max_train = 10000
 
 np.random.seed(1)
 
@@ -186,7 +189,7 @@ for dat in datasets:
 
     X = X.astype(float)
     X = scale(X)
-    
+
     X_train = X[:n_samples_train, :]
     X_test = X[n_samples_train:, :]
     y_train = y[:n_samples_train]
@@ -217,13 +220,13 @@ for dat in datasets:
         lim_sup = X_.max(axis=0)
         volume_support = (lim_sup - lim_inf).prod()
         t = np.arange(0, 100 / volume_support, 0.001 / volume_support)
-        axis_alpha = np.arange(0.9, 0.99, 0.001)
+        axis_alpha = np.arange(alpha_max, 0.99, 0.001)
         unif = np.random.uniform(lim_inf, lim_sup,
                                  size=(n_generated, max_features))
 
         iforest.fit(X_train_)
         lof.fit(X_train_)
-        ocsvm.fit(X_train_[:min(50000, n_samples_train - 1)])
+        ocsvm.fit(X_train_[:min(ocsvm_max_train, n_samples_train - 1)])
         print 'end of ocsvm training!'
         s_X_iforest = iforest.decision_function(X_)
         s_X_lof = lof.decision_function(X_)
@@ -233,15 +236,15 @@ for dat in datasets:
         s_unif_lof = lof.decision_function(unif)
         s_unif_ocsvm = ocsvm.decision_function(unif).reshape(1, -1)[0]
 
-        em_iforest += em(t, volume_support, s_unif_iforest,
+        em_iforest += em(t, t_max, volume_support, s_unif_iforest,
                          s_X_iforest, n_generated)[0]
         mv_iforest += mv(axis_alpha, volume_support, s_unif_iforest,
                          s_X_iforest, n_generated)[0]
-        em_lof += em(t, volume_support, s_unif_lof, s_X_lof,
+        em_lof += em(t, t_max, volume_support, s_unif_lof, s_X_lof,
                      n_generated)[0]
         mv_lof += mv(axis_alpha, volume_support, s_unif_lof,
                      s_X_lof, n_generated)[0]
-        em_ocsvm += em(t, volume_support, s_unif_ocsvm,
+        em_ocsvm += em(t, t_max, volume_support, s_unif_ocsvm,
                        s_X_ocsvm, n_generated)[0]
         mv_ocsvm += mv(axis_alpha, volume_support, s_unif_ocsvm,
                        s_X_ocsvm, n_generated)[0]
