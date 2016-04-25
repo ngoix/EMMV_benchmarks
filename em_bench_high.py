@@ -49,9 +49,9 @@ np.random.seed(1)
 #             'smtp', 'shuttle', # 'spambase',
 #             'pendigits', 'pima', 'wilt', 'adult']
 
-# datasets = ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
-#             'forestcover']
-datasets = ['arrhythmia']
+datasets = ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
+            'forestcover']
+
 
 for dat in datasets:
     # loading and vectorization
@@ -128,7 +128,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_supervised_with099_withano10percent_with_scale_withnoanotesting_with50000ocsvm' + dat + '_'
+    with open('results_workshop/result_em_bench_high_supervised_with' + str(alpha_max) + '_factorized_with' + str(ocsvm_max_train) + 'ocsvm_' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
