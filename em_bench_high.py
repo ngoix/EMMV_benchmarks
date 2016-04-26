@@ -19,9 +19,10 @@ from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 
 
 averaging = 20
-max_features = 3
+max_features = 5
 n_generated = 100000
-alpha_max = 0.9
+alpha_min = 0.9
+alpha_max = 0.999
 t_max = 0.9
 ocsvm_max_train = 10000
 
@@ -92,7 +93,7 @@ for dat in datasets:
         if volume_support > 0:
             nb_exp += 1
             t = np.arange(0, 100 / volume_support, 0.001 / volume_support)
-            axis_alpha = np.arange(alpha_max, 0.99, 0.001)
+            axis_alpha = np.arange(alpha_min, alpha_max, 0.001)
             unif = np.random.uniform(lim_inf, lim_sup,
                                      size=(n_generated, max_features))
 
@@ -128,7 +129,7 @@ for dat in datasets:
     em_ocsvm /= averaging
     mv_ocsvm /= averaging
 
-    with open('results_workshop/result_em_bench_high_supervised_with' + str(alpha_max) + '_factorized_with' + str(ocsvm_max_train) + 'ocsvm_' + dat + '_'
+    with open('results_workshop/result_em_bench_high_supervised_with' + str(alpha_min) + '_factorized_with' + str(ocsvm_max_train) + 'ocsvm_' + dat + '_'
               + str(max_features) + '_' +
               str(averaging) + '_' + '.txt', 'a') as result:
         result.write('em_iforest = ' + str(em_iforest) + '\n')
