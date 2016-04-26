@@ -19,10 +19,10 @@ from sklearn.datasets import one_class_data
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 
 n_generated = 100000
-alpha_min = 0.9
+alpha_min = 0.95
 alpha_max = 0.999
-t_max = 0.9
-ocsvm_max_train = 50000
+t_max = 0.95
+ocsvm_max_train = 10000
 # wilt: prendre t_max = 0.995, alpha_min = 0.995, alpha_max=0.999 (sans scale)
 np.random.seed(1)
 
@@ -156,5 +156,11 @@ for dat in datasets:
     plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
     plt.legend(loc="upper left")
 
-    plt.savefig('t_mv_em_' + dat + '_supervised' + '_09' + '_scale' + '_10ano')
+    plt.savefig('mv_em_' + dat + '_supervised'
+                + '_alphamin' + str(alpha_min) + '_'
+                + '_alphamax' + str(alpha_max) + '_'
+                + '_tmax' + str(t_max) + '_'
+                + '_n_generated' + str(n_generated) + '_'
+                + '_ocsvm' + str(ocsvm_max_train) + '_'
+                + '_factorized')
     # plt.show()
