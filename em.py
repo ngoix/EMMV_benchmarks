@@ -14,8 +14,6 @@ def em(t, t_max, volume_support, s_unif, s_X, n_generated):
     #                           * volume_support)
     n_samples = s_X.shape[0]
     s_X_unique = np.unique(s_X)
-    if len(EM_t) == 0:
-        pdb.set_trace()
     EM_t[0] = 1.
     for u in s_X_unique:
         # if (s_unif >= u).sum() > n_generated / 1000:

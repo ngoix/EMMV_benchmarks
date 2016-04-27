@@ -19,9 +19,9 @@ from sklearn.datasets import one_class_data
 from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
 
 n_generated = 100000
-alpha_min = 0.95
+alpha_min = 0.9
 alpha_max = 0.999
-t_max = 0.95
+t_max = 0.9
 ocsvm_max_train = 10000
 # wilt: prendre t_max = 0.995, alpha_min = 0.995, alpha_max=0.999 (sans scale)
 np.random.seed(1)
@@ -44,10 +44,8 @@ np.random.seed(1)
 # new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
 #       'pima', 'wilt', 'adult']
 
-datasets = ['http',
-            'smtp', 'shuttle',  # 'spambase',
-            'pendigits', 'pima', 'wilt', 'adult']
-# datasets = ['adult']
+datasets = ['http', 'smtp',  # 'shuttle', 'pendigits',
+            'pima', 'wilt', 'adult']
 
 for dat in datasets:
     plt.clf()
@@ -79,7 +77,7 @@ for dat in datasets:
     lim_inf = X.min(axis=0)
     lim_sup = X.max(axis=0)
     volume_support = (lim_sup - lim_inf).prod()
-    t = np.arange(0, 100 / volume_support, 0.001 / volume_support)
+    t = np.arange(0, 100 / volume_support, 0.01 / volume_support)
     axis_alpha = np.arange(alpha_min, alpha_max, 0.0001)
     unif = np.random.uniform(lim_inf, lim_sup,
                              size=(n_generated, n_features))
@@ -112,8 +110,10 @@ for dat in datasets:
     auc_ocsvm, em_ocsvm, amax_ocsvm = em(t, t_max, volume_support,
                                          s_unif_ocsvm, s_X_ocsvm,
                                          n_generated)
-
-    amax = max(amax_iforest, amax_lof, amax_ocsvm)
+    if amax_iforest == -1 or amax_lof == -1 or amax_ocsvm == -1:
+        amax = -1
+    else:
+        amax = max(amax_iforest, amax_lof, amax_ocsvm)
     plt.subplot(121)
     plt.plot(t[:amax], em_iforest[:amax], lw=1,
              label='%s (em_score = %0.3e)'
@@ -156,11 +156,12 @@ for dat in datasets:
     plt.title('Mass-Volume Curve for ' + dat + ' dataset', fontsize=20)
     plt.legend(loc="upper left")
 
-    plt.savefig('mv_em_' + dat + '_supervised'
-                + '_alphamin' + str(alpha_min) + '_'
-                + '_alphamax' + str(alpha_max) + '_'
-                + '_tmax' + str(t_max) + '_'
-                + '_n_generated' + str(n_generated) + '_'
-                + '_ocsvm' + str(ocsvm_max_train) + '_'
-                + '_factorized')
-    # plt.show()
+    # plt.savefig('unsup_mv_em_' + dat + '_unsupervised_09_factorized')
+
+    # plt.savefig('mv_em_' + dat + '_supervised'
+    #             + '_alphamin' + str(int(100 * alpha_min)) + '_'
+    #             + '_n_generated' + str(n_generated) + '_'
+    #             + '_ocsvm' + str(ocsvm_max_train) + '_'
+    #             + '_factorized_pruning')
+
+    plt.show()
