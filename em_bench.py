@@ -157,6 +157,7 @@ for dat in datasets:
     plt.legend(loc="upper left")
 
     # plt.savefig('unsup_mv_em_' + dat + '_unsupervised_09_factorized')
+    # plt.savefig('mv_em_' + dat + '_unsupervised_09_factorized')
 
     # plt.savefig('mv_em_' + dat + '_supervised'
     #             + '_alphamin' + str(int(100 * alpha_min)) + '_'
