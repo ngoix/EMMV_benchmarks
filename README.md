@@ -1,9 +1,7 @@
 # EMMV_benchmarks
 # How to evaluate unsupervised Anomaly Detection algorithms?
 
-author: Nicolas Goix, LTCI, CNRS, Telecom ParisTech, Paris-Saclay university
-
-         nicolas.goix@telecom-paristech.fr
+author: Nicolas Goix, nicolas.goix@telecom-paristech.fr
 
 This is the code associated with ICML workshop paper
 
