@@ -1,13 +1,12 @@
 import numpy as np
-import pdb
+
 # import matplotlib.pyplot as plt
 # for the cluster to save the fig:
-import sys
-sys.path.insert(1, '/home/nicolas/Bureau/OCRF')
-
-
 import matplotlib
 matplotlib.use('Agg')
+
+import sys
+sys.path.insert(1, '/home/nicolas/Bureau/OCRF')
 
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
@@ -15,9 +14,12 @@ from sklearn.ensemble import IsolationForest
 from sklearn.utils import shuffle as sh
 from sklearn.datasets import one_class_data
 
-from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
+from em import em, mv
 
+# framework: outlier or novelty detection
+novelty_detection = True
 
+# parameters of the algorithm:
 averaging = 50
 max_features = 5
 n_generated = 100000
@@ -27,11 +29,6 @@ t_max = 0.9
 ocsvm_max_train = 10000
 
 np.random.seed(1)
-
-# TODO: find good default parameters for every datasets
-# TODO: make an average of ROC curves over 10 experiments
-# TODO: idem in bench_lof, bench_isolation_forest (to be launch from master)
-#       bench_ocsvm (to be created), bench_ocrf (to be created)
 
 # # datasets available:
 # datasets = ['http', 'smtp', 'SA', 'SF', 'shuttle', 'forestcover',
@@ -43,16 +40,12 @@ np.random.seed(1)
 # datasets = ['http', 'smtp', 'shuttle', 'forestcover',
 #             'ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
 #             'pendigits', 'pima', 'wilt', 'adult']
-# new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
-#       'pima', 'wilt', 'adult']
 
-# datasets = [# 'http',
-#             'smtp', 'shuttle', # 'spambase',
-#             'pendigits', 'pima', 'wilt', 'adult']
-
+# # high-dim continuous datasets:
 # datasets = ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
-#             'forestcover']
-datasets = ['shuttle', 'pendigits', 'forestcover']
+#             'forestcover', 'shuttle', 'pendigits']
+
+datasets = ['ionosphere']
 
 for dat in datasets:
     # loading and vectorization
@@ -66,11 +59,12 @@ for dat in datasets:
     y_train = y[:n_samples_train]
     y_test = y[n_samples_train:]
 
-    # # training and testing only on normal data:
-    # X_train = X_train[y_train == 0]
-    # y_train = y_train[y_train == 0]
-    # X_test = X_test[y_test == 0]
-    # y_test = y_test[y_test == 0]
+    if novelty_detection:
+        # training and testing only on normal data:
+        X_train = X_train[y_train == 0]
+        y_train = y_train[y_train == 0]
+        X_test = X_test[y_test == 0]
+        y_test = y_test[y_test == 0]
 
     # define models:
     iforest = IsolationForest()

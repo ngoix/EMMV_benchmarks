@@ -1,14 +1,13 @@
 import numpy as np
-import pdb
-# import matplotlib.pyplot as plt
+
 # for the cluster to save the fig:
+# import matplotlib
+# matplotlib.use('Agg')
+
+from matplotlib import pyplot as plt
+
 import sys
 sys.path.insert(1, '/home/nicolas/Bureau/OCRF')
-
-
-import matplotlib
-# matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
@@ -16,20 +15,16 @@ from sklearn.ensemble import IsolationForest
 
 from sklearn.datasets import one_class_data
 
-from em import em, mv  # , EM_approx, MV_approx, MV_approx_over
+from em import em, mv
 
+# parameters of the algorithm:
 n_generated = 100000
 alpha_min = 0.9
 alpha_max = 0.999
 t_max = 0.9
 ocsvm_max_train = 10000
-# wilt: prendre t_max = 0.995, alpha_min = 0.995, alpha_max=0.999 (sans scale)
-np.random.seed(1)
 
-# TODO: find good default parameters for every datasets
-# TODO: make an average of ROC curves over 10 experiments
-# TODO: idem in bench_lof, bench_isolation_forest (to be launch from master)
-#       bench_ocsvm (to be created), bench_ocrf (to be created)
+np.random.seed(1)
 
 # # datasets available:
 # datasets = ['http', 'smtp', 'SA', 'SF', 'shuttle', 'forestcover',
@@ -44,8 +39,10 @@ np.random.seed(1)
 # new: ['ionosphere', 'spambase', 'annthyroid', 'arrhythmia', 'pendigits',
 #       'pima', 'wilt', 'adult']
 
-datasets = ['http', 'smtp',  # 'shuttle', 'pendigits',
-            'pima', 'wilt', 'adult']
+# # low-dimensional datasets:
+# datasets = ['http', 'smtp',  'pima', 'wilt', 'adult']
+
+datasets = ['adult']
 
 for dat in datasets:
     plt.clf()

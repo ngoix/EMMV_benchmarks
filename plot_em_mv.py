@@ -18,15 +18,10 @@ from sklearn.datasets import fetch_kddcup99, fetch_covtype, fetch_mldata
 from sklearn.datasets import fetch_spambase, fetch_annthyroid, fetch_arrhythmia
 from sklearn.datasets import fetch_pendigits, fetch_pima, fetch_wilt
 from sklearn.datasets import fetch_internet_ads, fetch_adult
-from em import EM, MV  # , EM_approx, MV_approx, MV_approx_over
+from em import EM, MV
 from sklearn.preprocessing import LabelBinarizer
 
 np.random.seed(1)
-
-# TODO: find good default parameters for every datasets
-# TODO: make an average of ROC curves over 10 experiments
-# TODO: idem in bench_lof, bench_isolation_forest (to be launch from master)
-#       bench_ocsvm (to be created), bench_ocrf (to be created)
 
 # # datasets available:
 # datasets = ['http', 'smtp', 'SA', 'SF', 'shuttle', 'forestcover',
