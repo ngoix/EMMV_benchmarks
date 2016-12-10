@@ -1,0 +1,106 @@
+"""
+==========================================
+LOF OCSVM iForest benchmark
+==========================================
+
+A test of LocalOutlierFactor on classical anomaly detection datasets.
+
+"""
+print(__doc__)
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+
+from sklearn.metrics import roc_curve, precision_recall_curve, auc
+from sklearn.datasets import one_class_data
+from sklearn.utils import shuffle as sh
+
+
+np.random.seed(0)
+
+# training only on normal data?
+novelty_detection = False
+
+# # datasets available:
+# datasets = ['http', 'smtp', 'SA', 'SF', 'shuttle', 'forestcover',
+#             'ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
+#             'pendigits', 'pima', 'wilt', 'internet_ads', 'adult']
+
+# # continuous datasets:
+# datasets = ['http', 'smtp', 'shuttle', 'forestcover',
+#             'ionosphere', 'spambase', 'annthyroid', 'arrhythmia',
+#             'pendigits', 'pima', 'wilt', 'adult']
+datasets = ['http']
+
+classifiers = {
+    "One-Class SVM": OneClassSVM(),
+    "Isolation Forest": IsolationForest(),
+    "Local Outlier Factor": LocalOutlierFactor(n_neighbors=20)}
+
+plt.figure(figsize=(25, 17))
+
+for dat in datasets:
+    # loading and vectorization
+    X, y = one_class_data(dat, scaling=False, continuous=False)
+
+    n_samples, n_features = np.shape(X)
+    n_samples_train = n_samples // 2
+    n_samples_test = n_samples - n_samples_train
+
+    n_axis = 1000
+    x_axis = np.linspace(0, 1, n_axis)
+    tpr = np.zeros(n_axis)
+    precision = np.zeros(n_axis)
+    fit_time = 0
+    predict_time = 0
+
+    X, y = sh(X, y)
+
+    X_train = X[:n_samples_train, :]
+    X_test = X[n_samples_train:, :]
+    y_train = y[:n_samples_train]
+    y_test = y[n_samples_train:]
+
+    if novelty_detection:
+        # training only on normal data:
+        X_train = X_train[y_train == 0]
+        y_train = y_train[y_train == 0]
+
+    for i, (clf_name, clf) in enumerate(classifiers.items()):
+        print('AD processing...')
+
+        clf.fit(X_train)
+
+        scoring = -clf.decision_function(X_test)  # the lower,the more normal
+        fpr, tpr, thresholds = roc_curve(y_test, scoring)
+
+        precision, recall = precision_recall_curve(y_test, scoring)[:2]
+
+        AUC = auc(fpr, tpr)
+        AUPR = auc(recall, precision)
+
+        plt.subplot(121)
+        plt.plot(fpr, tpr, lw=1, label='%s (area = %0.3f)' % (clf_name, AUC))
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('False Positive Rate', fontsize=25)
+        plt.ylabel('True Positive Rate', fontsize=25)
+        plt.title('ROC curve', fontsize=25)
+        plt.legend(loc="lower right", prop={'size': 12})
+
+        plt.subplot(122)
+        plt.plot(recall, precision, lw=1, label='%s (area = %0.3f)'
+                 % (clf_name, AUPR))
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('Recall', fontsize=25)
+        plt.ylabel('Precision', fontsize=25)
+        plt.title('PR curve', fontsize=25)
+        plt.legend(loc="lower right", prop={'size': 12})
+
+plt.show()
