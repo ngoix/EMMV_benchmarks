@@ -1,10 +1,10 @@
 # EMMV_benchmarks
 # How to evaluate unsupervised Anomaly Detection algorithms?
 
-author: Nicolas Goix, nicolas.goix@telecom-paristech.fr
+author: Nicolas Goix, goix.nicolas@gmail.com
 
 This is the code associated with ICML workshop paper
-http://perso.telecom-paristech.fr/~goix/icml_workshop.pdf
+https://arxiv.org/abs/1607.01152
 
 
 -File em_bench.py evaluates the algorithms using EM and MV based criteria,
